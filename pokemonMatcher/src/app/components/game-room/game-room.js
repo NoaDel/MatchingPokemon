@@ -1,9 +1,8 @@
 const carding = document.querySelectorAll('.memory-card');
-
+let cards[] = carding;
 let hasFlippedCard = false;
 let lockBoard = false;
 let firstCard, secondCard;
-
 flipCard() {
   if (lockBoard) return;
   if (this === firstCard) return;
@@ -50,10 +49,12 @@ resetBoard() {
   [firstCard, secondCard] = [null, null];
 }
 
-(shuffle() {
+shuffle() {
+  console.log(carding);
+  carding.slice(12);
   carding.forEach(card => {
     let randomPos = Math.floor(Math.random() * 12);
   });
-})();
+}
 
 carding.forEach(card => card.addEventListener('click', flipCard));

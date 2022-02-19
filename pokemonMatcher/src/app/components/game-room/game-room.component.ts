@@ -17,7 +17,8 @@ import { createReadStream } from 'fs';
   styleUrls: ['./game-room.component.scss']
 })
 export class GameRoomComponent implements OnInit {
-cards: Observable<Cards>
+
+  cards: Observable<Cards>
 selecteds: Array<User>
 user: User;
 fbuser: firebase.User;
@@ -44,6 +45,8 @@ public getUser: AngularFirestoreDocument<User>;
   // private ctx: CanvasRenderingContext2D;
 
   ngOnInit(): void {
+    let card = document.getElementsByClassName("memory");
+    console.log(card);
     if(window.history.state.selecteds){
       this.selecteds = window.history.state.selecteds
       console.log(this.selecteds)
@@ -53,8 +56,10 @@ public getUser: AngularFirestoreDocument<User>;
 
 
     const id = this.route.snapshot.paramMap.get('id');
+    const page = Math.floor(Math.random() * 20);
     const players = this.route.snapshot.paramMap.get('selecteds');
-    this.cards = this.gameService.getCardSetById(id)
+    this.cards = this.gameService.getCardSetById(id,page);
+    console.log(this.cards);
 
 
     this.auth.getUserState()
@@ -70,13 +75,14 @@ public getUser: AngularFirestoreDocument<User>;
 
   }
 
+
+
   getUserObservable(): Observable<User> {
     return this.getUser.valueChanges();
   }
 
   gamePlayed(userCredentials){
     this.user = userCredentials
-
 
     console.log(this.user)
     const userRef: AngularFirestoreDocument<User> = this.db.collection('Users').doc(userCredentials.uid);
@@ -162,23 +168,23 @@ lockBoard: boolean = false;
 firstCard: any;
 secondCard: any;
 
-flipCard(event) {
-  if (this.lockBoard) {
+  flipCard(event) {
+  /*if (this.lockBoard) {
     return;
   }
-  if (event.target.parentNode === this.firstCard) {
+    if (event.target.parentNode === this.firstCard) {
     return;
-  }
+  }*/
 
   event.target.parentNode.classList.toggle('flip');
 
 
-  if (!this.hasFlippedCard) {
+  /*if (!this.hasFlippedCard) {
     this.hasFlippedCard = true;
     this.firstCard = event.target.parentNode;
 
     return;
-  }
+  }*/
 
   this.secondCard = event.target.parentNode;
   this.checkForMatch();
@@ -191,11 +197,12 @@ checkForMatch() {
 }
 
 disableCards() {
-  // this.firstCard.removeEventListener('click', this.flipCard);
-  // this.secondCard.removeEventListener('click', this.flipCard);
+  /*this.firstCard.removeEventListener('click', this.flipCard);
+  this.secondCard.removeEventListener('click', this.flipCard);
 
-  this.resetBoard();
-}
+  this.resetBoard();*/
+  console.log("disabled" + this.firstCard);
+  }
 
 unflipCards() {
   this.lockBoard = true;

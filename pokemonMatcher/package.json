@@ -22,6 +22,7 @@
     "@angular/platform-browser": "~10.2.0",
     "@angular/platform-browser-dynamic": "~10.2.0",
     "@angular/router": "~10.2.0",
+    "async": "^3.2.3",
     "firebase": "^7.23.0",
     "js-to-ts-converter": "^0.18.1",
     "pokemon-font": "^1.8.1",
