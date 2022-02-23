@@ -1,15 +1,17 @@
 import { Component, ViewChild, ElementRef, OnInit, Pipe } from '@angular/core';
 // import { POKEMON } from '../../pokemon';a
 import { ActivatedRoute, NavigationStart, Router } from '@angular/router';
-import {Cards} from '../../interfaces/cards'
+import { Cards } from '../../interfaces/cards'
 import { GameService } from 'src/app/services/game.service';
-import { Observable } from 'rxjs';
-import { filter, map, tap } from 'rxjs/operators'
+import { Observable, BehaviorSubject } from 'rxjs';
+import { filter, map, subscribeOn, tap } from 'rxjs/operators'
 import { User } from '../../interfaces/user';
 import { AuthService } from 'src/app/services/auth.service';
 import { AngularFirestore, AngularFirestoreDocument } from '@angular/fire/firestore';
 import { $ } from 'protractor';
 import { createReadStream } from 'fs';
+import { Subscription } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-game-room',
@@ -18,11 +20,13 @@ import { createReadStream } from 'fs';
 })
 export class GameRoomComponent implements OnInit {
 
+  //cards: any[]
   cards: Observable<Cards>
-selecteds: Array<User>
-user: User;
-fbuser: firebase.User;
-public getUser: AngularFirestoreDocument<User>;
+  //cardss: Observable<Subscription>
+  selecteds: Array<User>
+  user: User;
+  fbuser: firebase.User;
+  public getUser: AngularFirestoreDocument<User>;
 
 
 
@@ -34,44 +38,66 @@ public getUser: AngularFirestoreDocument<User>;
     private router: Router,
     private auth: AuthService,
     private db: AngularFirestore,
+    private http: HttpClient
 
 
-
-  ){
+  ) {
   }
+  /*loadProducts(): Observable<Cards> {
+    debugger;
+    this.cards = this.http.get<Cards>(`https://api.pokemontcg.io/v1/cards?setCode=base1&page=1&pageSize=5`).pipe(data => this.randomizeArray(data['cards']))
+    return this.cards
+  }*/
   // @ViewChild('canvas', { static: true })
   // canvas: ElementRef<HTMLCanvasElement>;
 
   // private ctx: CanvasRenderingContext2D;
 
-  ngOnInit(): void {
+  ngOnInit() {
     let card = document.getElementsByClassName("memory");
     console.log(card);
-    if(window.history.state.selecteds){
+    if (window.history.state.selecteds) {
       this.selecteds = window.history.state.selecteds
       console.log(this.selecteds)
     } else {
       this.router.navigateByUrl(`lobby`)
     }
-
-
+    let et
+    this.cards = this.http.get<Cards>(`https://api.pokemontcg.io/v1/cards?setCode=base1&page=1&pageSize=5`).pipe(map(data =>
+      this.randomizeArray(data['cards'])
+    ))
     const id = this.route.snapshot.paramMap.get('id');
     const page = Math.floor(Math.random() * 20);
     const players = this.route.snapshot.paramMap.get('selecteds');
-    this.cards = this.gameService.getCardSetById(id,page);
-    console.log(this.cards);
+    //this.cards = this.gameService.getCardSetById(id, page).then(this.gameService.getCards())
+    /*this.cards.subscribe(_products => {
+        this.randomizeArray(_products);
+    })*/
+    /*this.cards = this.gameService.getCardSetById(id, page)*/
+    /*this.cards = this.gameService.getCardSetById(id, page)
+    this.cards.subscribe(_products => {
+      this.randomizeArray(_products);
+      return this.randomProductsSource.asObservable
+        
+    })*/
+    /*this.cards = this.gameService.getCards();*/
+    /*console.log('line3')
+    console.log(this.cards.subscribe(results => {
+
+      console.log(results);
+    }))*/
 
 
     this.auth.getUserState()
-    .subscribe(fbuser => {
-      this.fbuser = fbuser;
-      this.getUser = this.db.doc<User>(`Users/${this.fbuser.uid}`);
-      this.getUserObservable().subscribe(user => {
-        this.user = user;
-        console.log(user);
+      .subscribe(fbuser => {
+        this.fbuser = fbuser;
+        this.getUser = this.db.doc<User>(`Users/${this.fbuser.uid}`);
+        this.getUserObservable().subscribe(user => {
+          this.user = user;
+          console.log(user);
+        });
+        console.log(fbuser);
       });
-      console.log(fbuser);
-    });
 
   }
 
@@ -80,8 +106,15 @@ public getUser: AngularFirestoreDocument<User>;
   getUserObservable(): Observable<User> {
     return this.getUser.valueChanges();
   }
-
-  gamePlayed(userCredentials){
+  private randomizeArray(arrayProducts) {
+    arrayProducts = arrayProducts.concat(arrayProducts)
+    for (let i = arrayProducts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arrayProducts[i], arrayProducts[j]] = [arrayProducts[j], arrayProducts[i]];
+    }
+    return arrayProducts
+  }
+  gamePlayed(userCredentials) {
     this.user = userCredentials
 
     console.log(this.user)
@@ -92,9 +125,9 @@ public getUser: AngularFirestoreDocument<User>;
 
     let gameWon = true
 
-    if(gameWon == true){
+    if (gameWon == true) {
 
-      this.selecteds.forEach(player =>{
+      this.selecteds.forEach(player => {
         userCredentials.wonTo.push(player.displayName)
 
         const playersRef: AngularFirestoreDocument<User> = this.db.collection('Users').doc(player.uid);
@@ -118,7 +151,7 @@ public getUser: AngularFirestoreDocument<User>;
       })
 
       userRef.get().subscribe(doc => {
-        if (doc.exists){
+        if (doc.exists) {
           userRef.update({
             uid: userCredentials.uid,
             email: userCredentials.email,
@@ -132,12 +165,12 @@ public getUser: AngularFirestoreDocument<User>;
         }
 
       });
-    } else if(gameWon == false){
+    } else if (gameWon == false) {
       this.selecteds.forEach(player => {
         userCredentials.lostTo.push(player.displayName)
       });
       userRef.get().subscribe(doc => {
-        if (doc.exists){
+        if (doc.exists) {
           userRef.update({
             uid: userCredentials.uid,
             email: userCredentials.email,
@@ -153,72 +186,74 @@ public getUser: AngularFirestoreDocument<User>;
 
     }
   }
-  select(){
+  select() {
     console.log("test");
   }
   carding: any = document.querySelectorAll('.memory');
-  clicked(event){
+  clicked(event) {
     event.target.parentNode.classList.toggle('flip');
     console.log(event.target.classList);
     console.log("test");
   }
 
-hasFlippedCard: boolean = false;
-lockBoard: boolean = false;
-firstCard: any;
-secondCard: any;
+  hasFlippedCard: boolean = false;
+  lockBoard: boolean = false;
+  firstCard: any;
+  secondCard: any;
 
   flipCard(event) {
-  /*if (this.lockBoard) {
-    return;
-  }
-    if (event.target.parentNode === this.firstCard) {
-    return;
-  }*/
+    if (this.lockBoard) {
+      return;
+    }
+      if (event.target === this.firstCard) {
+      return;
+    }
 
-  event.target.parentNode.classList.toggle('flip');
+    event.target.parentNode.classList.toggle('flip');
 
 
-  /*if (!this.hasFlippedCard) {
-    this.hasFlippedCard = true;
-    this.firstCard = event.target.parentNode;
+    if (!this.hasFlippedCard) {
+      this.hasFlippedCard = true;
+      this.firstCard = event.target;
+  
+      return;
+    }
 
-    return;
-  }*/
-
-  this.secondCard = event.target.parentNode;
-  this.checkForMatch();
-}
-
-checkForMatch() {
-  let isMatch = this.firstCard.parentNode.dataset.framework === this.secondCard.parentNode.dataset.framework;
-
-  isMatch ? this.disableCards() : this.unflipCards();
-}
-
-disableCards() {
-  /*this.firstCard.removeEventListener('click', this.flipCard);
-  this.secondCard.removeEventListener('click', this.flipCard);
-
-  this.resetBoard();*/
-  console.log("disabled" + this.firstCard);
+    this.secondCard = event.target;
+    this.checkForMatch();
   }
 
-unflipCards() {
-  this.lockBoard = true;
+  checkForMatch() {
+    console.log(this.firstCard.parentNode.id)
+    console.log(this.secondCard.parentNode.id)
+    let isMatch = this.firstCard.parentNode.id === this.secondCard.parentNode.id;
+    console.log(this.firstCard.parentNode.id === this.secondCard.parentNode.id)
+    //isMatch ? this.disableCards() : this.unflipCards();
+    setTimeout(() => {
+      this.unflipCards()
+    }, 1000);
+  }
 
-  setTimeout(() => {
-    this.firstCard.parentNode.classList.remove('flip');
-    this.secondCard.parentNode.classList.remove('flip');
-
+  disableCards() {
+    this.firstCard.removeEventListener('click', this.flipCard);
+    this.secondCard.removeEventListener('click', this.flipCard);
+  
     this.resetBoard();
-  }, 15);
-}
+    console.log("disabled" + this.firstCard);
+  }
 
-resetBoard() {
-  [this.hasFlippedCard, this.lockBoard] = [false, false];
-  [this.firstCard, this.secondCard] = [null, null];
-}
+  unflipCards() {
+    this.lockBoard = true;
+      this.firstCard.parentNode.classList.remove('flip');
+      this.secondCard.parentNode.classList.remove('flip');
+
+      this.resetBoard();
+  }
+
+  resetBoard() {
+    [this.hasFlippedCard, this.lockBoard] = [false, false];
+    [this.firstCard, this.secondCard] = [null, null];
+  }
 
 
 
