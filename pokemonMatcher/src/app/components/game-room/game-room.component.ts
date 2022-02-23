@@ -202,25 +202,26 @@ export class GameRoomComponent implements OnInit {
   secondCard: any;
 
   flipCard(event) {
-    if (this.lockBoard) {
-      return;
-    }
+    if (this.lockBoard === false) {
+
       if (event.target === this.firstCard) {
-      return;
+        return;
+      }
+
+      event.target.parentNode.classList.toggle('flip');
+
+
+      if (!this.hasFlippedCard) {
+        this.hasFlippedCard = true;
+        this.firstCard = event.target;
+
+        return;
+      }
+
+      this.secondCard = event.target;
+      this.lockBoard = true;
+      this.checkForMatch();
     }
-
-    event.target.parentNode.classList.toggle('flip');
-
-
-    if (!this.hasFlippedCard) {
-      this.hasFlippedCard = true;
-      this.firstCard = event.target;
-  
-      return;
-    }
-
-    this.secondCard = event.target;
-    this.checkForMatch();
   }
 
   checkForMatch() {
@@ -230,7 +231,15 @@ export class GameRoomComponent implements OnInit {
     console.log(this.firstCard.parentNode.id === this.secondCard.parentNode.id)
     //isMatch ? this.disableCards() : this.unflipCards();
     setTimeout(() => {
-      this.unflipCards()
+      if (isMatch) {
+        this.disableCards()
+        console.log('cards match')
+      }
+      else {
+        this.unflipCards()
+        console.log("cards don't match")
+        this.lockBoard = false;
+      }
     }, 1000);
   }
 
