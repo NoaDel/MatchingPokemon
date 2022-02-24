@@ -202,25 +202,27 @@ export class GameRoomComponent implements OnInit {
   secondCard: any;
 
   flipCard(event) {
-    if (this.lockBoard === false) {
+    if (event.target.parentNode.id != 'flipped') {
+      if (this.lockBoard === false) {
 
-      if (event.target === this.firstCard) {
-        return;
+        if (event.target === this.firstCard) {
+          return;
+        }
+
+        event.target.parentNode.classList.toggle('flip');
+
+
+        if (!this.hasFlippedCard) {
+          this.hasFlippedCard = true;
+          this.firstCard = event.target;
+
+          return;
+        }
+
+        this.secondCard = event.target;
+        this.lockBoard = true;
+        this.checkForMatch();
       }
-
-      event.target.parentNode.classList.toggle('flip');
-
-
-      if (!this.hasFlippedCard) {
-        this.hasFlippedCard = true;
-        this.firstCard = event.target;
-
-        return;
-      }
-
-      this.secondCard = event.target;
-      this.lockBoard = true;
-      this.checkForMatch();
     }
   }
 
@@ -244,8 +246,10 @@ export class GameRoomComponent implements OnInit {
   }
 
   disableCards() {
-    this.firstCard.removeEventListener('click', this.flipCard);
-    this.secondCard.removeEventListener('click', this.flipCard);
+    /*this.firstCard.parentNode.removeEventListener('click', this.flipCard);
+    this.secondCard.parentNode.removeEventListener('click', this.flipCard);*/
+    this.firstCard.parentNode.id = 'flipped';
+    this.secondCard.parentNode.id = 'flipped';
   
     this.resetBoard();
     console.log("disabled" + this.firstCard);
