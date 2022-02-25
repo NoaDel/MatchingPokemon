@@ -10,7 +10,6 @@ import { AuthService } from 'src/app/services/auth.service';
 import { AngularFirestore, AngularFirestoreDocument } from '@angular/fire/firestore';
 import { $ } from 'protractor';
 import { createReadStream } from 'fs';
-import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
 @Component({
@@ -20,14 +19,12 @@ import { HttpClient } from '@angular/common/http';
 })
 export class GameRoomComponent implements OnInit {
 
-  //cards: any[]
   cards: Observable<Cards>
-  //cardss: Observable<Subscription>
   selecteds: Array<User>
   user: User;
   fbuser: firebase.User;
   public getUser: AngularFirestoreDocument<User>;
-
+  matched: number;
 
 
 
@@ -43,15 +40,6 @@ export class GameRoomComponent implements OnInit {
 
   ) {
   }
-  /*loadProducts(): Observable<Cards> {
-    debugger;
-    this.cards = this.http.get<Cards>(`https://api.pokemontcg.io/v1/cards?setCode=base1&page=1&pageSize=5`).pipe(data => this.randomizeArray(data['cards']))
-    return this.cards
-  }*/
-  // @ViewChild('canvas', { static: true })
-  // canvas: ElementRef<HTMLCanvasElement>;
-
-  // private ctx: CanvasRenderingContext2D;
 
   ngOnInit() {
     let card = document.getElementsByClassName("memory");
@@ -62,32 +50,14 @@ export class GameRoomComponent implements OnInit {
     } else {
       this.router.navigateByUrl(`lobby`)
     }
-    let et
-    this.cards = this.http.get<Cards>(`https://api.pokemontcg.io/v1/cards?setCode=base1&page=1&pageSize=5`).pipe(map(data =>
-      this.randomizeArray(data['cards'])
-    ))
     const id = this.route.snapshot.paramMap.get('id');
     const page = Math.floor(Math.random() * 20);
     const players = this.route.snapshot.paramMap.get('selecteds');
-    //this.cards = this.gameService.getCardSetById(id, page).then(this.gameService.getCards())
-    /*this.cards.subscribe(_products => {
-        this.randomizeArray(_products);
-    })*/
-    /*this.cards = this.gameService.getCardSetById(id, page)*/
-    /*this.cards = this.gameService.getCardSetById(id, page)
-    this.cards.subscribe(_products => {
-      this.randomizeArray(_products);
-      return this.randomProductsSource.asObservable
-        
-    })*/
-    /*this.cards = this.gameService.getCards();*/
-    /*console.log('line3')
-    console.log(this.cards.subscribe(results => {
-
-      console.log(results);
-    }))*/
-
-
+    //calling query for api
+    this.cards = this.http.get<Cards>(`https://api.pokemontcg.io/v1/cards?setCode=${id}&page=${page}&pageSize=5`).pipe(map(data =>
+      this.randomizeArray(data['cards'])
+    ))
+    this.matched = 0;
     this.auth.getUserState()
       .subscribe(fbuser => {
         this.fbuser = fbuser;
@@ -131,22 +101,6 @@ export class GameRoomComponent implements OnInit {
         userCredentials.wonTo.push(player.displayName)
 
         const playersRef: AngularFirestoreDocument<User> = this.db.collection('Users').doc(player.uid);
-        // playersRef.get().subscribe(doc => {
-
-        //   if (doc.exists){
-        //     playersRef.update({
-        //       uid: player.uid,
-        //       email: player.email,
-        //       displayName: player.displayName,
-        //       totalBattle: player.totalBattle + 1,
-        //       wins: player.wins + 1,
-        //       losses: player.losses,
-        //       wonTo: player.wonTo,
-        //       lostTo: player.lostTo
-        //     });
-        //   }
-
-        // });
 
       })
 
@@ -229,13 +183,18 @@ export class GameRoomComponent implements OnInit {
   checkForMatch() {
     console.log(this.firstCard.parentNode.id)
     console.log(this.secondCard.parentNode.id)
-    let isMatch = this.firstCard.parentNode.id === this.secondCard.parentNode.id;
+    let isMatch = this.firstCard.parentNode.id === this.secondCard.parentNode.id && this.firstCard.parentNode.title != this.secondCard.parentNode.title;
     console.log(this.firstCard.parentNode.id === this.secondCard.parentNode.id)
     //isMatch ? this.disableCards() : this.unflipCards();
     setTimeout(() => {
       if (isMatch) {
         this.disableCards()
         console.log('cards match')
+        this.matched++;
+        if (this.matched === 5) {
+          this.gamePlayed(this.user)
+          alert("you won!!!")
+        }
       }
       else {
         this.unflipCards()
@@ -246,8 +205,6 @@ export class GameRoomComponent implements OnInit {
   }
 
   disableCards() {
-    /*this.firstCard.parentNode.removeEventListener('click', this.flipCard);
-    this.secondCard.parentNode.removeEventListener('click', this.flipCard);*/
     this.firstCard.parentNode.id = 'flipped';
     this.secondCard.parentNode.id = 'flipped';
   

@@ -1,6 +1,6 @@
 <app-navbar></app-navbar>
 <body>
-  <div *ngFor="let card of cards | async; let i = index;" id="{{ card.id }}" [bool]="false" (click)="flipCard($event)" class="memory" data-framework="{{card.name}}">
+  <div *ngFor="let card of cards | async; let i = index;" title="{{i}}" id="{{ card.id }}" [bool]="false" (click)="flipCard($event)" class="memory" data-framework="{{card.name}}">
 
     <img src='{{card.imageUrl}}' class="front-face" />
     <img src='../../../assets/img/pokemonback.png' id="pokeBack" class="back-face" />
